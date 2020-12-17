@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import DaySlider from "./DaySlider";
 import SchedulesSlider from "./SchedulesSlider";
 
-import { Spin, Layout, Button } from "antd";
+import { Spin, Layout } from "antd";
 import {
   UserOutlined,
   SearchOutlined,
@@ -21,6 +21,41 @@ let contentwidth = 510;
 
 export default function Scheduler(props) {
   const { data, loading } = props;
+  const [favorites, setFavorites] = useState([]);
+  const [selectedProgram, setSelectedProgram] = useState(null);
+
+  const selectedProgramInFavorites = function () {
+    if (selectedProgram) {
+      return favorites.find(
+        (favorite) =>
+          favorite.id === selectedProgram.id &&
+          favorite.index === selectedProgram.index
+      );
+    } else {
+      return false;
+    }
+  };
+
+  const setFavoriteProgram = function () {
+    if (selectedProgram) {
+      const programExists = favorites.filter(
+        (favorite) =>
+          favorite.id === selectedProgram.id &&
+          favorite.index === selectedProgram.index
+      );
+      if (programExists?.length) {
+        const newFavorites = favorites.filter(
+          (favorite) =>
+            favorite.id !== selectedProgram.id ||
+            favorite.index !== selectedProgram.index
+        );
+        setFavorites(newFavorites);
+      } else {
+        const newFavorites = [...favorites, selectedProgram];
+        setFavorites(newFavorites);
+      }
+    }
+  };
 
   return (
     <div>
@@ -98,9 +133,17 @@ export default function Scheduler(props) {
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
+                  cursor: "pointer",
                 }}
+                onClick={() => setFavoriteProgram()}
               >
-                <StarOutlined />
+                <StarOutlined
+                  style={
+                    selectedProgram && selectedProgramInFavorites()
+                      ? { color: "#e1a21e" }
+                      : {}
+                  }
+                />
               </div>
             </Sider>
             <Content
@@ -111,7 +154,11 @@ export default function Scheduler(props) {
             </Content>
           </Layout>
           <Layout>
-            <SchedulesSlider {...props} />
+            <SchedulesSlider
+              {...props}
+              selectedProgram={selectedProgram}
+              setSelectedProgram={setSelectedProgram}
+            />
           </Layout>
           <Footer
             style={{

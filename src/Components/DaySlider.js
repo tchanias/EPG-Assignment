@@ -1,31 +1,13 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Empty } from "antd";
-import Carousel from "react-multi-carousel";
-import "react-multi-carousel/lib/styles.css";
+import ItemsCarousel from "react-items-carousel";
 import moment from "moment";
-
-const responsive = {
-  desktop: {
-    breakpoint: { max: 3000, min: 1024 },
-    items: 3,
-    slidesToSlide: 3, // optional, default to 1.
-  },
-  tablet: {
-    breakpoint: { max: 1024, min: 464 },
-    items: 3,
-    slidesToSlide: 2, // optional, default to 1.
-  },
-  mobile: {
-    breakpoint: { max: 464, min: 0 },
-    items: 3,
-    slidesToSlide: 1, // optional, default to 1.
-  },
-};
 
 export default function DaySlider(props) {
   const { selectedDay, setSelectedDay } = props;
+  const [activeItemIndex, setActiveItemIndex] = useState(0);
 
-  function getDaysArrayByMonth(day) {
+  const getDaysArrayByMonth = function (day) {
     var daysInMonth = day ? moment(day).daysInMonth() : moment().daysInMonth();
     var arrDays = [];
 
@@ -35,11 +17,31 @@ export default function DaySlider(props) {
       daysInMonth--;
     }
     return arrDays;
-  }
+  };
+
+  const initialActiveIndex = function (selectedDay) {
+    const monthArray = getDaysArrayByMonth(selectedDay).sort(sortDays);
+    if (monthArray) {
+      return monthArray.findIndex(
+        (day) => moment(selectedDay).format("L") === moment(day).format("L")
+      );
+    } else {
+      return 0;
+    }
+  };
+
+  useEffect(() => {
+    setActiveItemIndex(initialActiveIndex(selectedDay));
+  }, []);
+
+  useEffect(() => {
+    const monthArray = getDaysArrayByMonth(selectedDay).sort(sortDays);
+    if (monthArray) {
+      setSelectedDay(moment(monthArray[activeItemIndex]));
+    }
+  }, [activeItemIndex]);
 
   const renderDays = function (selectedDay) {
-    const month = selectedDay.format("MM");
-    const day = selectedDay.format("DD");
     const monthArray = getDaysArrayByMonth(selectedDay).sort(sortDays);
     if (monthArray) {
       return monthArray.map((day, index) => renderDay(day, index));
@@ -92,30 +94,29 @@ export default function DaySlider(props) {
   };
 
   return (
-    <Carousel
-      afterChange={(props) => console.log("slider props: ", props)}
-      containerClass="carousel-container"
-      centerMode
-      focusOnSelect
-      swipeable={true}
-      draggable={true}
-      showDots={false}
-      responsive={responsive}
-      ssr={false}
-      infinite={true}
-      autoPlay={false}
-      arrows={false}
-      autoPlaySpeed={1000}
-      keyBoardControl={true}
-      customTransition="all .5"
-      transitionDuration={500}
-      containerClass="carousel-container"
-      removeArrowOnDeviceType={["tablet", "mobile"]}
-      deviceType={"desktop"}
-      dotListClass="custom-dot-list-style"
-      itemClass="carousel-item-padding-40-px"
-    >
-      {renderDays(selectedDay)}
-    </Carousel>
+    <div style={{ padding: `10px ${40}px`, width: 398 }}>
+      <ItemsCarousel
+        requestToChangeActive={setActiveItemIndex}
+        activeItemIndex={activeItemIndex}
+        numberOfCards={3}
+        gutter={10}
+        activePosition={"center"}
+        leftChevron={
+          <span onClick={() => setActiveItemIndex(activeItemIndex - 1)}>
+            {"<"}
+          </span>
+        }
+        rightChevron={
+          <span onClick={() => setActiveItemIndex(activeItemIndex + 1)}>
+            {">"}
+          </span>
+        }
+        outsideChevron
+        chevronWidth={40}
+        style={{ width: 399 }}
+      >
+        {renderDays(selectedDay)}
+      </ItemsCarousel>
+    </div>
   );
 }

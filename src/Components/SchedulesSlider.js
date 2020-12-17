@@ -1,21 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Empty, Layout, Divider } from "antd";
+import { Empty, Layout, Divider, Popover } from "antd";
 import moment from "moment";
+import { InfoCircleOutlined } from "@ant-design/icons";
 import { scrollerWidth, hourArray } from "../helpers";
 import { ScrollSync, ScrollSyncPane } from "react-scroll-sync";
 import ScrollContainer from "react-indiana-drag-scroll";
+// import InfoModal from "./InfoModal";
 
 const { Sider, Content, Header } = Layout;
 
 export default function SchedulesSlider(props) {
-  const { data } = props;
+  const { data, selectedProgram, setSelectedProgram } = props;
   const [time, setTime] = useState(Date.now());
   const [dividerPosition, setDividerPosition] = useState(
     calculateDividerPosition()
   );
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
   const scroller = useRef(null);
   const channels = data?.channels?.length ? data.channels : [];
-
   useEffect(() => {
     const interval = setInterval(() => setTime(Date.now()), 60000);
 
@@ -42,19 +44,85 @@ export default function SchedulesSlider(props) {
     return moment().isBetween(moment(schedule.start), moment(schedule.end));
   };
 
-  const renderProgramList = function (schedules) {
-    return schedules.map((schedule) => {
+  const isSelectedProgram = function (channelId, index) {
+    if (selectedProgram) {
+      return (
+        channelId === selectedProgram.id && index === selectedProgram.index
+      );
+    } else {
+      return false;
+    }
+  };
+
+  const renderProgramList = function (schedules, channelId, channelTitle) {
+    return schedules.map((schedule, index) => {
       const duration = getDiffInMinutes(schedule.start, schedule.end);
       return (
         <div
-          className={"unselectable"}
+          className={
+            isSelectedProgram(channelId, index)
+              ? "unselectable selected-program"
+              : "unselectable"
+          }
           style={
             isCurrent(schedule)
               ? styles.scheduleActiveStyles(duration)
               : styles.scheduleInactiveStyles(duration)
           }
+          onClick={() =>
+            setSelectedProgram({
+              id: channelId,
+              Title: schedule.title,
+              index: index,
+              channelTitle: channelTitle,
+            })
+          }
         >
-          <div style={styles.programTitle}>{schedule.title}</div>
+          <div style={styles.programTitle}>
+            {schedule.title}
+            <span style={{ marginLeft: 5 }}>
+              <InfoCircleOutlined
+                style={{ color: "#e1a21e" }}
+                onClick={() => {
+                  setSelectedProgram({
+                    id: channelId,
+                    Title: schedule.title,
+                    index: index,
+                    channelTitle: channelTitle,
+                  });
+                  setInfoModalVisible(true);
+                }}
+              />
+
+              {/*
+              // to be continued
+              <Popover
+                title={selectedProgram?.Title}
+                trigger={'hover'}
+                placement={'right'}
+                content={
+                  <InfoModal
+                    selectedProgram={selectedProgram}
+                    infoModalVisible={infoModalVisible}
+                    setInfoModalVisible={setInfoModalVisible}
+                  />
+                }
+              >
+                <InfoCircleOutlined
+                  style={{ color: "#e1a21e" }}
+                  onClick={() => {
+                    setSelectedProgram({
+                      id: channelId,
+                      Title: schedule.title,
+                      index: index,
+                      channelTitle: channelTitle,
+                    });
+                    setInfoModalVisible(true);
+                  }}
+                />
+              </Popover> */}
+            </span>
+          </div>
           <div style={styles.scheduleTimeStyles}>
             <span>{moment(schedule.start).format("HH:mm")}</span>
             <span> - </span>
@@ -69,7 +137,7 @@ export default function SchedulesSlider(props) {
     return channels.map((channel, index) => (
       <div key={index} style={styles.channelListStyles}>
         <div style={styles.programListStyles}>
-          {renderProgramList(channel.schedules)}
+          {renderProgramList(channel.schedules, channel.id, channel.title)}
         </div>
       </div>
     ));
@@ -129,59 +197,61 @@ export default function SchedulesSlider(props) {
   };
 
   return (
-    <div>
-      <ScrollSync>
-        <Layout>
-          <ScrollSyncPane>
-            <Header className={"hour-bar"} style={{ overflowX: "scroll" }}>
-              {renderHoursBar()}
-            </Header>
-          </ScrollSyncPane>
-          <Layout style={{ display: "flex" }}>
-            <Sider width={80} style={styles.channelsLogosBar}>
-              {renderLogosList(channels)}
-            </Sider>
-            <Content
-              className={"channel-list-container"}
-              style={{
-                overflowX: "scroll",
-                overflowY: "hidden",
-                marginLeft: 5,
-                position: "relative",
-              }}
-            >
-              <ScrollSyncPane>
-                <ScrollContainer
-                  className="scroll-container"
-                  innerRef={scroller}
-                  horizontal={true}
-                  vertical={false}
-                  hideScrollbars={true}
-                >
-                  <div
-                    style={{
-                      width: scrollerWidth,
-                      position: "relative",
-                    }}
+    <>
+      <div>
+        <ScrollSync>
+          <Layout>
+            <ScrollSyncPane>
+              <Header className={"hour-bar"} style={{ overflowX: "scroll" }}>
+                {renderHoursBar()}
+              </Header>
+            </ScrollSyncPane>
+            <Layout style={{ display: "flex" }}>
+              <Sider width={80} style={styles.channelsLogosBar}>
+                {renderLogosList(channels)}
+              </Sider>
+              <Content
+                className={"channel-list-container"}
+                style={{
+                  overflowX: "scroll",
+                  overflowY: "hidden",
+                  marginLeft: 5,
+                  position: "relative",
+                }}
+              >
+                <ScrollSyncPane>
+                  <ScrollContainer
+                    className="scroll-container"
+                    innerRef={scroller}
+                    horizontal={true}
+                    vertical={false}
+                    hideScrollbars={true}
                   >
                     <div
-                      className={"with-timeline"}
                       style={{
-                        left: dividerPosition,
+                        width: scrollerWidth,
+                        position: "relative",
                       }}
-                    ></div>
-                    {renderChannelList(channels)}
-                  </div>
-                </ScrollContainer>
-              </ScrollSyncPane>
-              <div style={styles.focusButtonStyles}>
-                <div onClick={() => focusOnCurrentTime()}>Now</div>
-              </div>
-            </Content>
+                    >
+                      <div
+                        className={"with-timeline"}
+                        style={{
+                          left: dividerPosition,
+                        }}
+                      ></div>
+                      {renderChannelList(channels)}
+                    </div>
+                  </ScrollContainer>
+                </ScrollSyncPane>
+                <div style={styles.focusButtonStyles}>
+                  <div onClick={() => focusOnCurrentTime()}>Now</div>
+                </div>
+              </Content>
+            </Layout>
           </Layout>
-        </Layout>
-      </ScrollSync>
-    </div>
+        </ScrollSync>
+      </div>
+    </>
   );
 }
 

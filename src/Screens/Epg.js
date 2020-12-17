@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Scheduler from "../Components/Scheduler";
+import { dataUrl } from "../helpers";
 import moment from "moment";
 
 export default function Epg() {
@@ -11,10 +12,9 @@ export default function Epg() {
     setDataLoading(true);
     // setTimeout is used in order to simulate the data loading delay
     setTimeout(() => {
-      fetch("http://localhost:1337/epg")
+      fetch(dataUrl)
         .then((res) => res.json())
         .then((data) => {
-          console.log("data: ", data);
           setEpgData(data);
         });
     }, 3000);

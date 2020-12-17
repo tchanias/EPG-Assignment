@@ -1,9 +1,7 @@
 import React from "react";
 import DaySlider from "./DaySlider";
-import HourSlider from "./HourSlider";
-import ChannelMenu from "./ChannelMenu";
 import SchedulesSlider from "./SchedulesSlider";
-import AlternateSlider from "./AlternateSlider";
+
 import { Spin, Layout, Button } from "antd";
 import {
   UserOutlined,
@@ -113,20 +111,7 @@ export default function Scheduler(props) {
             </Content>
           </Layout>
           <Layout>
-            <Content>
-              <HourSlider {...props} />
-            </Content>
-          </Layout>
-          {/* <Layout>
-            <Sider>
-              <ChannelMenu {...props} />
-            </Sider>
-            <Content>
-              <SchedulesSlider {...props} />
-            </Content>
-          </Layout> */}
-          <Layout>
-            <AlternateSlider {...props} />
+            <SchedulesSlider {...props} />
           </Layout>
           <Footer
             style={{
